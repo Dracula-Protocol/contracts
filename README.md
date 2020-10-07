@@ -13,12 +13,12 @@ __VampireAdapter__ is a helper library, that makes delegate calls from __Mater V
 ## Adapters
 There are several adapters to the most popular farming contracts. Every one of them is a separate contract that implements the __IVampireAdapter__ interface.
 
-__SushiAdapter__ [0xeb583Aaf4F35b84E49ee159D6dcb4a04e4a2a8b5](https://etherscan.io/address/0xeb583Aaf4F35b84E49ee159D6dcb4a04e4a2a8b5)
+__SushiAdapter__ [0x5846b3A199d7746e6e4c06c95ddeEC299a18063a](https://etherscan.io/address/0x5846b3A199d7746e6e4c06c95ddeEC299a18063a)
 
-__LuaAdapter__ [0x6f4C7A4fd0122016868333769a468068e72B2c48](https://etherscan.io/address/0x6f4C7A4fd0122016868333769a468068e72B2c48)
+__LuaAdapter__ [0x7E15Af078beCbb86af07Ebf59378DAA813cAf54C](https://etherscan.io/address/0x7E15Af078beCbb86af07Ebf59378DAA813cAf54C)
 
 __UniswapAdapter__ [0x6E95fdEd84CA29F5c15501abcF10Fd7a410cE353](https://etherscan.io/address/0x6E95fdEd84CA29F5c15501abcF10Fd7a410cE353)
 
-__PickleAdapter__ [0x04a812FB7F02Ae13f6267B7bA30B5598a7F6E0eB](https://etherscan.io/address/0x04a812FB7F02Ae13f6267B7bA30B5598a7F6E0eB)
+__PickleAdapter__ [0x5403fFd517dFe40BeF9A48997d0C6896Ed0c7f28](https://etherscan.io/address/0x5403fFd517dFe40BeF9A48997d0C6896Ed0c7f28)
 
-__YfvAdapter__ [0x5e8Cc25e7BbA1479CEE17604B72e8Bd64739E3c3](https://etherscan.io/address/0x5e8Cc25e7BbA1479CEE17604B72e8Bd64739E3c3)
+__YfvAdapter__ [0xfD92F42bA498F7e86882C66f82eAC6547a2106f6](https://etherscan.io/address/0xfD92F42bA498F7e86882C66f82eAC6547a2106f6)
