@@ -54,8 +54,10 @@ contract SushiAdapter is IVampireAdapter {
     }
     
     // Pool actions, requires impersonation via delegatecall
-    function deposit(address, uint256 poolId, uint256 amount) external override {
-        sushiMasterChef.deposit( poolId, amount);
+    function deposit(address _adapter, uint256 poolId, uint256 amount) external override {
+        IVampireAdapter adapter = IVampireAdapter(_adapter);
+        adapter.lockableToken(poolId).approve(address(sushiMasterChef), uint256(-1));
+        sushiMasterChef.deposit(poolId, amount);
     }
 
     function withdraw(address, uint256 poolId, uint256 amount) external override {

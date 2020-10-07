@@ -54,7 +54,9 @@ contract PickleAdapter is IVampireAdapter {
     }
     
     // Pool actions, requires impersonation via delegatecall
-    function deposit(address, uint256 poolId, uint256 amount) external override {
+    function deposit(address _adapter, uint256 poolId, uint256 amount) external override {
+        IVampireAdapter adapter = IVampireAdapter(_adapter);
+        adapter.lockableToken(poolId).approve(address(pickleMasterChef), uint256(-1));
         pickleMasterChef.deposit( poolId, amount);
     }
 
