@@ -9,7 +9,7 @@ import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
 import "./ISakeMaster.sol";
 
-contract SushiAdapter is IVampireAdapter {
+contract SakeAdapter is IVampireAdapter {
     ISakeMaster constant sakeMaster = ISakeMaster(0x0EC1f1573f3a2dB0Ad396c843E6a079e2a53e557);
     IERC20 constant sake = IERC20(0x066798d9ef0833ccc719076Dab77199eCbd178b0);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
