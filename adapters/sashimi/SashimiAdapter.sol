@@ -13,9 +13,9 @@ contract SashimiAdapter is IVampireAdapter {
     IMasterChef constant sashimiMasterChef = IMasterChef(0x1daed74ed1dd7c9dabbe51361ac90a69d851234d);
     IERC20 constant sashimi = IERC20(0xc28e27870558cf22add83540d2126da2e4b464c2);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IUniswapV2Pair constant sashimiWethPair = IUniswapV2Pair(0x3fa4b0b3053413684d0b658689ede7907bb4d69d);
-    // token 0 - sashimi
-    // token 1 - weth
+    IUniswapV2Pair constant wethSashimiPair = IUniswapV2Pair(0x3fa4b0b3053413684d0b658689ede7907bb4d69d);
+    // token 0 - weth
+    // token 1 - sashimi
 
     constructor() public {
     }
@@ -35,10 +35,10 @@ contract SashimiAdapter is IVampireAdapter {
     
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
-        sashimi.transfer(address(sashimiWethPair), rewardAmount);
-        (uint sashimiReserve, uint wethReserve,) = sashimiWethPair.getReserves();
+        sashimi.transfer(address(wethSashimiPair), rewardAmount);
+        (uint wethReserve, uint sashimiReserve,) = wethSashimiPair.getReserves();
         uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, sashimiReserve, wethReserve);
-        sashimiWethPair.swap(uint(0), amountOutput, to, new bytes(0));
+        wethSashimiPair.swap(amountOutput, uint(0), to, new bytes(0));
         return amountOutput;
     }
     
@@ -61,11 +61,11 @@ contract SashimiAdapter is IVampireAdapter {
     }
 
     function withdraw(address, uint256 poolId, uint256 amount) external override {
-        sashimiMasterChef.withdraw( poolId, amount);
+        sashimiMasterChef.withdraw(poolId, amount);
     }
 
     function claimReward(address, uint256 poolId) external override {
-        sashimiMasterChef.deposit( poolId, 0);
+        sashimiMasterChef.deposit(poolId, 0);
     }
     
     function emergencyWithdraw(address, uint256 poolId) external override {
@@ -78,7 +78,7 @@ contract SashimiAdapter is IVampireAdapter {
     }
 
     function rewardToWethPool() external view override returns (address) {
-        return address(sashimiWethPair);
+        return address(wethSashimiPair);
     }
     
     function lockedValue(address, uint256) external override view returns (uint256) {
