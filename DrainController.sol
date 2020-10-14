@@ -56,10 +56,10 @@ contract DrainController is Ownable
         lastCumulativePrice = currentCumulativePrice;
     }
 
-    function checkRejectionTreshold() view public {
+    function priceIsUnderRejectionTreshold() view public returns(bool) {
         (uint112 drcReserves, uint112 wethReserves,) = DRC_WETH_PAIR.getReserves();
         uint224 currentPrice = UQ112x112.encode(wethReserves).uqdiv(drcReserves);
-        require(currentPrice < (price + price * 100 / drainRejectionTreshold), "Possible price manipulation");
+        return currentPrice < (price + price * 100 / drainRejectionTreshold);
     }
 
     function massDrain(uint256[] memory pids) public {
