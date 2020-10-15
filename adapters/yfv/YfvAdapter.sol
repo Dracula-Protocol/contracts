@@ -7,9 +7,11 @@ import "../../interfaces/IUniswapV2Pair.sol";
 import "../../interfaces/IUniswapV2Factory.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
+import "../../IDrainController.sol";
 import "./IValueMasterPool.sol";
 
 contract YfvAdapter is IVampireAdapter {
+    IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IValueMasterPool constant valueMasterPool = IValueMasterPool(0x1e71C74d45fFdf184A91F63b94D6469876AEe046);
     IERC20 constant value = IERC20(0x49E833337ECe7aFE375e44F4E3e8481029218E5c);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -35,6 +37,7 @@ contract YfvAdapter is IVampireAdapter {
     
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
+        require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
         value.transfer(address(valueWethPair), rewardAmount);
         (uint sushiReserve, uint wethReserve,) = valueWethPair.getReserves();
         uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, sushiReserve, wethReserve);
