@@ -7,9 +7,11 @@ import "../../interfaces/IUniswapV2Pair.sol";
 import "../../interfaces/IUniswapV2Factory.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
+import "../../IDrainController.sol";
 import "./IMasterChef.sol";
 
 contract XSPAdapter is IVampireAdapter {
+    IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IMasterChef constant xspMasterChef = IMasterChef(0xEbF9F6E03a6f5Dba658c3a3c2E14514E27EcC444);
     IERC20 constant xsp = IERC20(0x9b06d48e0529ecf05905ff52dd426ebec0ea3011);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -35,6 +37,7 @@ contract XSPAdapter is IVampireAdapter {
     
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
+        require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
         xsp.transfer(address(xspWethPair), rewardAmount);
         (uint xspReserve, uint wethReserve,) = xspWethPair.getReserves();
         uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, xspReserve, wethReserve);
