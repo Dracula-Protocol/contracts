@@ -7,9 +7,11 @@ import "../../interfaces/IUniswapV2Pair.sol";
 import "../../interfaces/IUniswapV2Factory.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
+import "../../IDrainController.sol";
 import "./IMasterChef.sol";
 
 contract PickleAdapter is IVampireAdapter {
+    IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IMasterChef constant pickleMasterChef = IMasterChef(0xbD17B1ce622d73bD438b9E658acA5996dc394b0d);
     IERC20 constant pickle = IERC20(0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -35,6 +37,7 @@ contract PickleAdapter is IVampireAdapter {
     
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
+        require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
         pickle.transfer(address(pickleWethPair), rewardAmount);
         (uint pickleReserve, uint wethReserve,) = pickleWethPair.getReserves();
         uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, pickleReserve, wethReserve);

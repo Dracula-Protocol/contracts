@@ -8,9 +8,11 @@ import "../../interfaces/IUniswapV2Factory.sol";
 import "../../interfaces/IUniswapV2Router02.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
+import "../../IDrainController.sol";
 import "./ILuaMasterFarmer.sol";
 
 contract LuaAdapter is IVampireAdapter {
+    IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     ILuaMasterFarmer constant luaMasterFarmer = ILuaMasterFarmer(0xb67D7a6644d9E191Cac4DA2B88D6817351C7fF62);
     IUniswapV2Router02 constant router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     IERC20 constant lua = IERC20(0xB1f66997A5760428D3a87D68b90BfE0aE64121cC);
@@ -38,6 +40,7 @@ contract LuaAdapter is IVampireAdapter {
         uint256 rewardAmount,
         address to
     ) external override returns (uint256) {
+        require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
         address[] memory path = new address[](3);
         path[0] = address(lua);
         path[1] = address(usdc);
