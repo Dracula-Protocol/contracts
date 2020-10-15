@@ -7,9 +7,11 @@ import "../../interfaces/IUniswapV2Pair.sol";
 import "../../interfaces/IUniswapV2Factory.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
+import "../../IDrainController.sol";
 import "./IMasterChef.sol";
 
 contract SashimiAdapter is IVampireAdapter {
+    IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IMasterChef constant sashimiMasterChef = IMasterChef(0x1daed74ed1dd7c9dabbe51361ac90a69d851234d);
     IERC20 constant sashimi = IERC20(0xc28e27870558cf22add83540d2126da2e4b464c2);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -35,6 +37,7 @@ contract SashimiAdapter is IVampireAdapter {
     
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
+        require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
         sashimi.transfer(address(wethSashimiPair), rewardAmount);
         (uint wethReserve, uint sashimiReserve,) = wethSashimiPair.getReserves();
         uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, sashimiReserve, wethReserve);
