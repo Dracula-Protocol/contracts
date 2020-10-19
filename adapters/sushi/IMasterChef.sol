@@ -11,4 +11,7 @@ interface IMasterChef{
     function deposit(uint256 _pid, uint256 _amount) external;
     function withdraw(uint256 _pid, uint256 _amount) external;
     function emergencyWithdraw(uint256 _pid) external;
+    function getMultiplier(uint256 _from, uint256 _to) external view returns (uint256);
+    function sushiPerBlock() external view returns (uint256);
+    function totalAllocPoint() external view returns (uint256);
 }
