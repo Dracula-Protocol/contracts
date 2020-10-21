@@ -3,6 +3,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IUniswapV2Pair.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
@@ -11,6 +12,8 @@ import "./interfaces/IDODO.sol";
 import "./IDODOMine.sol";
 
 contract DODOAdapter is IVampireAdapter {
+    using SafeERC20 for IERC20;
+
     IDrainController constant DRAIN_CONTROLLER = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IUniswapV2Pair constant WETH_USDT_PAIR = IUniswapV2Pair(0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852);
     IDODOMine constant DODO_MINE = IDODOMine(0xaeD7384F03844Af886b830862FF0a7AFce0a632C);
@@ -40,16 +43,15 @@ contract DODOAdapter is IVampireAdapter {
             2. Swap USDT for WETH on Uniswap
         */
         // 1
-        require(DODO.approve(address(DODO_USDT), rewardAmount), "Must approve spending of reward amount");
+        DODO.approve(address(DODO_USDT), rewardAmount);
         uint256 usdtAmount = DODO_USDT.sellBaseToken(rewardAmount, 0, new bytes(0));
         require(usdtAmount > 0, "DODO to USDT failed");
 
         // 2
-        USDT.approve(address(WETH_USDT_PAIR), usdtAmount);
-        USDT.transfer(address(WETH_USDT_PAIR), usdtAmount);
+        USDT.safeTransfer(address(WETH_USDT_PAIR), usdtAmount);
         (uint wethReserve, uint usdtReserve,) = WETH_USDT_PAIR.getReserves();
         uint amountOutput = UniswapV2Library.getAmountOut(usdtAmount, usdtReserve, wethReserve);
-        WETH_USDT_PAIR.swap(uint(0), amountOutput, to, new bytes(0));
+        WETH_USDT_PAIR.swap(amountOutput, uint(0), to, new bytes(0));
         return amountOutput;
     }
 
