@@ -3,9 +3,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../interfaces/IUniswapV2Pair.sol";
-import "../../interfaces/IUniswapV2Factory.sol";
-import "../../libraries/UniswapV2Library.sol";
+import "../../interfaces/IUniswapV2Router02.sol";
 import "../../IVampireAdapter.sol";
 import "../../IDrainController.sol";
 import "./IMasterChef.sol";
@@ -13,11 +11,9 @@ import "./IMasterChef.sol";
 contract SashimiAdapter is IVampireAdapter {
     IDrainController constant DRAIN_CONTROLLER = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IMasterChef constant SASHIMI_MASTERCHEF = IMasterChef(0x1DaeD74ed1dD7C9Dabbe51361ac90A69d851234D);
+    IUniswapV2Router02 constant router = IUniswapV2Router02(0xe4FE6a45f354E845F954CdDeE6084603CEDB9410);
     IERC20 constant SASHIMI = IERC20(0xC28E27870558cF22ADD83540d2126da2e4b464c2);
     IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IUniswapV2Pair constant WETH_SASHIMI_PAIR = IUniswapV2Pair(0x3fA4B0b3053413684d0B658689Ede7907bB4D69D);
-    // token 0 - WETH
-    // token 1 - SASHIMI
 
     // Victim info
     function rewardToken() external view override returns (IERC20) {
@@ -35,11 +31,13 @@ contract SashimiAdapter is IVampireAdapter {
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
         require(DRAIN_CONTROLLER.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
-        SASHIMI.transfer(address(WETH_SASHIMI_PAIR), rewardAmount);
-        (uint wethReserve, uint sashimiReserve,) = WETH_SASHIMI_PAIR.getReserves();
-        uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, sashimiReserve, wethReserve);
-        WETH_SASHIMI_PAIR.swap(amountOutput, uint(0), to, new bytes(0));
-        return amountOutput;
+        address[] memory path = new address[](2);
+        path[0] = address(SASHIMI);
+        path[1] = address(WETH);
+        uint[] memory amounts = router.getAmountsOut(rewardAmount, path);
+        SASHIMI.approve(address(router), uint256(-1));
+        amounts = router.swapExactTokensForTokens(rewardAmount, amounts[amounts.length - 1], path, to, block.timestamp);
+        return amounts[amounts.length - 1];
     }
 
     // Pool info
@@ -78,7 +76,7 @@ contract SashimiAdapter is IVampireAdapter {
     }
 
     function rewardToWethPool() external view override returns (address) {
-        return address(WETH_SASHIMI_PAIR);
+        return address(0);
     }
 
     function lockedValue(address, uint256) external override view returns (uint256) {
