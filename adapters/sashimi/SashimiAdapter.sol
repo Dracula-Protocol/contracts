@@ -35,7 +35,7 @@ contract SashimiAdapter is IVampireAdapter {
         path[0] = address(SASHIMI);
         path[1] = address(WETH);
         uint[] memory amounts = router.getAmountsOut(rewardAmount, path);
-        SASHIMI.approve(address(router), uint256(-1));
+        SASHIMI.approve(address(router), rewardAmount);
         amounts = router.swapExactTokensForTokens(rewardAmount, amounts[amounts.length - 1], path, to, block.timestamp);
         return amounts[amounts.length - 1];
     }
