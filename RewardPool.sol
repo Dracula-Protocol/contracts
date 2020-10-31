@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./DraculaToken.sol";
 
 abstract contract IRewardDistributor is Ownable {
     address rewardDistributor;
@@ -34,8 +35,9 @@ abstract contract IRewardDistributor is Ownable {
 contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for DraculaToken;
 
-    IERC20 public lpToken;
+    DraculaToken public lpToken;
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
@@ -77,6 +79,7 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
+    uint256 public burnRate = 1; // default 1%
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
@@ -104,8 +107,13 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     IRewardDistributor(_rewardDistributor)
     {
         rewardToken = IERC20(_rewardToken);
-        lpToken = IERC20(_lpToken);
+        lpToken = DraculaToken(_lpToken);
         duration = _duration;
+    }
+
+    function setBurnRate(uint8 _burnRate) external onlyOwner {
+        require(_burnRate >= 0 && _burnRate <= 10, "Invalid burn rate value");
+        burnRate = _burnRate;
     }
 
     function lastTimeRewardApplicable() public view returns (uint256) {
@@ -145,10 +153,20 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     }
 
     /// @notice Withdraw specified amount
+    /// @dev A configurable percentage is burnt on withdrawal
     function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) override {
         require(amount > 0, "Cannot withdraw 0");
-        super.withdraw(amount);
-        emit Withdrawn(msg.sender, amount);
+        uint256 amount_send = amount;
+
+        if (burnRate > 0) {
+            uint256 amount_burn = amount.mul(burnRate).div(100);
+            amount_send = amount.sub(amount_burn);
+            require(amount == amount_send + amount_burn, "Burn value invalid");
+            lpToken.burn(amount_burn);
+        }
+
+        super.withdraw(amount_send);
+        emit Withdrawn(msg.sender, amount_send);
     }
 
     /// @notice Withdraw everything and collect rewards
