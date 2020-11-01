@@ -8,11 +8,11 @@ import "../../interfaces/IUniswapV2Factory.sol";
 import "../../libraries/UniswapV2Library.sol";
 import "../../IVampireAdapter.sol";
 import "../../IDrainController.sol";
-import "./IValueMasterPool.sol";
+import "./IValueMinorPool.sol";
 
 contract YfvAdapter is IVampireAdapter {
     IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
-    IValueMasterPool constant valueMasterPool = IValueMasterPool(0x1e71C74d45fFdf184A91F63b94D6469876AEe046);
+    IValueMinorPool constant valueMinorPool = IValueMinorPool(0xcC51169c21158084371C63BC260abA4AfdcfBd2f);
     IERC20 constant value = IERC20(0x49E833337ECe7aFE375e44F4E3e8481029218E5c);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IUniswapV2Pair constant valueWethPair = IUniswapV2Pair(0xd9159376499936868A5B061a4633481131e70732);
@@ -28,7 +28,7 @@ contract YfvAdapter is IVampireAdapter {
     }
 
     function poolCount() external view override returns (uint256) {
-        return valueMasterPool.poolLength();
+        return valueMinorPool.poolLength();
     }
 
     function sellableRewardAmount() external view override returns (uint256) {
@@ -39,45 +39,45 @@ contract YfvAdapter is IVampireAdapter {
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
         require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
         value.transfer(address(valueWethPair), rewardAmount);
-        (uint sushiReserve, uint wethReserve,) = valueWethPair.getReserves();
-        uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, sushiReserve, wethReserve);
+        (uint valueReserve, uint wethReserve,) = valueWethPair.getReserves();
+        uint amountOutput = UniswapV2Library.getAmountOut(rewardAmount, valueReserve, wethReserve);
         valueWethPair.swap(uint(0), amountOutput, to, new bytes(0));
         return amountOutput;
     }
     
     // Pool info
     function lockableToken(uint256 poolId) external view override returns (IERC20) {
-        (IERC20 lpToken,,,,) = valueMasterPool.poolInfo(poolId);
+        (IERC20 lpToken,,,,) = valueMinorPool.poolInfo(poolId);
         return lpToken;
     }
 
     function lockedAmount(address user, uint256 poolId) external view override returns (uint256) {
-        (uint256 amount,,) = valueMasterPool.userInfo(poolId, user);
+        (uint256 amount,,) = valueMinorPool.userInfo(poolId, user);
         return amount;
     }
     
     // Pool actions, requires impersonation via delegatecall
     function deposit(address _adapter, uint256 poolId, uint256 amount) external override {
         IVampireAdapter adapter = IVampireAdapter(_adapter);
-        adapter.lockableToken(poolId).approve(address(valueMasterPool), uint256(-1));
-        valueMasterPool.deposit(poolId, amount, address(0));
+        adapter.lockableToken(poolId).approve(address(valueMinorPool), uint256(-1));
+        valueMinorPool.deposit(poolId, amount, address(0));
     }
 
     function withdraw(address, uint256 poolId, uint256 amount) external override {
-        valueMasterPool.withdraw(poolId, amount);
+        valueMinorPool.withdraw(poolId, amount);
     }
 
     function claimReward(address, uint256 poolId) external override {
-        valueMasterPool.deposit(poolId, 0, address(0));
+        valueMinorPool.deposit(poolId, 0, address(0));
     }
     
     function emergencyWithdraw(address, uint256 poolId) external override {
-        valueMasterPool.emergencyWithdraw(poolId);
+        valueMinorPool.emergencyWithdraw(poolId);
     }
 
     // Service methods
     function poolAddress(uint256) external view override returns (address) {
-        return address(valueMasterPool);
+        return address(valueMinorPool);
     }
 
     function rewardToWethPool() external view override returns (address) {
