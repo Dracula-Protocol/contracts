@@ -1,4 +1,4 @@
-StrudelAdapter// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 
 pragma solidity 0.6.12;
 
@@ -14,10 +14,10 @@ import "./ITorchShip.sol";
 contract StrudelAdapter is IVampireAdapter {
     using SafeMath for uint256;
     IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
-    ITorchShip constant strudelTorchShip = ITorchShip(0x517b091fdb87a42c879bbb849444e76a324d53c8);
-    IERC20 constant strudel = IERC20(0x297d33e17e61c2ddd812389c2105193f8348188a);
+    ITorchShip constant strudelTorchShip = ITorchShip(0x517b091FdB87A42c879BbB849444E76A324D53c8);
+    IERC20 constant strudel = IERC20(0x297D33e17e61C2Ddd812389C2105193f8348188a);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IUniswapV2Pair constant strudelWethPair = IUniswapV2Pair(0x29b0aa11de97f6d5a3293d980990e820bda5fbab);
+    IUniswapV2Pair constant strudelWethPair = IUniswapV2Pair(0x29b0aA11dE97f6d5A3293d980990e820BDA5FBAb);
     uint256 constant BLOCKS_PER_YEAR = 2336000;
     // token 0 - strudel
     // token 1 - weth
