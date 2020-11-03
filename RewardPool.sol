@@ -8,62 +8,9 @@ import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./IRewardDistributor.sol";
+import "./LPTokenWrapper.sol";
 import "./DraculaToken.sol";
-
-abstract contract IRewardDistributor is Ownable {
-    address rewardDistributor;
-
-    constructor(address _rewardDistributor) public {
-        rewardDistributor = _rewardDistributor;
-    }
-
-    function notifyRewardAmount(uint256 reward) external virtual;
-
-    modifier onlyRewardDistributor() {
-        require(_msgSender() == rewardDistributor, "Caller is not reward distribution");
-        _;
-    }
-
-    function setRewardDistributor(address _rewardDistributor)
-        external
-        onlyOwner
-    {
-        rewardDistributor = _rewardDistributor;
-    }
-}
-
-contract LPTokenWrapper {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
-    using SafeERC20 for DraculaToken;
-
-    DraculaToken public lpToken;
-
-    uint256 private _totalSupply;
-    mapping(address => uint256) private _balances;
-
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
-    }
-
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
-    }
-
-    function stake(uint256 amount) public virtual {
-        _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
-        lpToken.safeTransferFrom(msg.sender, address(this), amount);
-    }
-
-    function withdraw(uint256 amount) public virtual {
-        require(_balances[msg.sender] >= amount, "withdraw: insufficient balance");
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
-        lpToken.safeTransfer(msg.sender, amount);
-    }
-}
-
 
 /// @title A reward pool that does not mint
 /// @dev The rewards should be first transferred to this pool, then get "notified" by calling `notifyRewardAmount`.
@@ -87,7 +34,6 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
-    event RewardDenied(address indexed user, uint256 reward);
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
