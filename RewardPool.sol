@@ -9,16 +9,17 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IRewardDistributor.sol";
-import "./LPTokenWrapper.sol";
 import "./DraculaToken.sol";
 
 /// @title A reward pool that does not mint
 /// @dev The rewards should be first transferred to this pool, then get "notified" by calling `notifyRewardAmount`.
 ///      Only the reward distributor can notify.
-contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
+contract RewardPool is IRewardDistributor, ReentrancyGuard {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using SafeERC20 for DraculaToken;
 
-    using Address for address;
-
+    DraculaToken public dracula;
     IERC20 public rewardToken;
     uint256 public duration;
 
@@ -29,6 +30,9 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     uint256 public burnRate = 1; // default 1%
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
+
+    uint256 private _totalStaked;
+    mapping(address => uint256) private _stakedBalances;
 
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
@@ -47,14 +51,22 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
 
     constructor(
         address _rewardToken,
-        address _lpToken,
+        DraculaToken _draculaToken,
         uint256 _duration,
         address _rewardDistributor) public
     IRewardDistributor(_rewardDistributor)
     {
         rewardToken = IERC20(_rewardToken);
-        lpToken = DraculaToken(_lpToken);
+        dracula = _draculaToken;
         duration = _duration;
+    }
+
+    function totalStaked() public view returns (uint256) {
+        return _totalStaked;
+    }
+
+    function balanceOf(address account) public view returns (uint256) {
+        return _stakedBalances[account];
     }
 
     function setBurnRate(uint8 _burnRate) external onlyOwner {
@@ -67,7 +79,7 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (totalSupply() == 0) {
+        if (totalStaked() == 0) {
             return rewardPerTokenStored;
         }
         return
@@ -76,7 +88,7 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
                     .sub(lastUpdateTime)
                     .mul(rewardRate)
                     .mul(1e18)
-                    .div(totalSupply())
+                    .div(totalStaked())
             );
     }
 
@@ -92,15 +104,17 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
 
     /// @notice Stake specified amount
     /// @dev visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public nonReentrant updateReward(msg.sender) override {
+    function stake(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
-        super.stake(amount);
+        _totalStaked = _totalStaked.add(amount);
+        _stakedBalances[msg.sender] = _stakedBalances[msg.sender].add(amount);
+        dracula.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
 
     /// @notice Withdraw specified amount
     /// @dev A configurable percentage is burnt on withdrawal
-    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) override {
+    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         uint256 amount_send = amount;
 
@@ -108,10 +122,12 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
             uint256 amount_burn = amount.mul(burnRate).div(100);
             amount_send = amount.sub(amount_burn);
             require(amount == amount_send + amount_burn, "Burn value invalid");
-            lpToken.burn(amount_burn);
+            dracula.burn(amount_burn);
         }
 
-        super.withdraw(amount_send);
+        _totalStaked = _totalStaked.sub(amount);
+        _stakedBalances[msg.sender] = _stakedBalances[msg.sender].sub(amount);
+        dracula.safeTransfer(msg.sender, amount_send);
         emit Withdrawn(msg.sender, amount_send);
     }
 
@@ -119,18 +135,6 @@ contract RewardPool is LPTokenWrapper, IRewardDistributor, ReentrancyGuard {
     function exit() external nonReentrant {
         withdraw(balanceOf(msg.sender));
         getReward();
-    }
-
-    /// @notice A push mechanism for accounts that have not claimed their rewards for a long time.
-    /// @dev The implementation is semantically analogous to getReward(), but uses a push pattern
-    /// instead of pull pattern.
-    function pushReward(address recipient) public nonReentrant updateReward(recipient) {
-        uint256 reward = earned(recipient);
-        if (reward > 0) {
-            rewards[recipient] = 0;
-            rewardToken.safeTransfer(recipient, reward);
-            emit RewardPaid(recipient, reward);
-        }
     }
 
     /// @notice Claims reward for the sender account
