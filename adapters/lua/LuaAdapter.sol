@@ -17,7 +17,6 @@ contract LuaAdapter is IVampireAdapter {
     IUniswapV2Router02 constant router = IUniswapV2Router02(0x1d5C6F1607A171Ad52EFB270121331b3039dD83e);
     IERC20 constant lua = IERC20(0xB1f66997A5760428D3a87D68b90BfE0aE64121cC);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IERC20 constant usdc = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
     constructor() public {}
 
@@ -41,10 +40,9 @@ contract LuaAdapter is IVampireAdapter {
         address to
     ) external override returns (uint256) {
         require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
-        address[] memory path = new address[](3);
+        address[] memory path = new address[](2);
         path[0] = address(lua);
-        path[1] = address(usdc);
-        path[2] = address(weth);
+        path[1] = address(weth);
         uint[] memory amounts = router.getAmountsOut(rewardAmount, path);
         lua.approve(address(router), uint256(-1));
         amounts = router.swapExactTokensForTokens(rewardAmount, amounts[amounts.length - 1], path, to, block.timestamp );
@@ -107,10 +105,10 @@ contract LuaAdapter is IVampireAdapter {
     function rewardToWethPool() external override view returns (address) {
         return address(0);
     }
-    
+
     function lockedValue(address, uint256) external override view returns (uint256) {
         require(false, "not implemented");
-    }    
+    }
 
     function totalLockedValue(uint256) external override view returns (uint256) {
         require(false, "not implemented"); 

@@ -4,7 +4,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IValueMasterPool{
+interface IValueMinorPool{
     function poolInfo(uint256) external view returns (IERC20,uint256,uint256,uint256,bool);
     function userInfo(uint256, address) external view returns (uint256,uint256,uint256);
     function poolLength() external view returns (uint256);
