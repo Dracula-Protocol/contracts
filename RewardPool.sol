@@ -132,7 +132,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     }
 
     /// @notice Withdraw everything and collect rewards
-    function exit() external nonReentrant {
+    function unstake() external {
         withdraw(balanceOf(msg.sender));
         getReward();
     }
