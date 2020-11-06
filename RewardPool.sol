@@ -23,16 +23,15 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     IERC20 public rewardToken;
     uint256 public duration;
 
-    uint256 public periodFinish = 0;
-    uint256 public rewardRate = 0;
+    uint256 public periodFinish;
+    uint256 public rewardRate;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     uint256 public burnRate = 1; // default 1%
+    uint256 public totalStaked;
+    mapping(address => uint256) private stakedBalances;
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
-
-    uint256 private _totalStaked;
-    mapping(address => uint256) private _stakedBalances;
 
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
@@ -61,16 +60,12 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         duration = _duration;
     }
 
-    function totalStaked() public view returns (uint256) {
-        return _totalStaked;
-    }
-
     function balanceOf(address account) public view returns (uint256) {
-        return _stakedBalances[account];
+        return stakedBalances[account];
     }
 
-    function setBurnRate(uint8 _burnRate) external onlyOwner {
-        require(_burnRate >= 0 && _burnRate <= 10, "Invalid burn rate value");
+    function setBurnRate(uint256 _burnRate) external onlyOwner {
+        require(_burnRate <= 10, "Invalid burn rate value");
         burnRate = _burnRate;
     }
 
@@ -79,7 +74,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (totalStaked() == 0) {
+        if (totalStaked == 0) {
             return rewardPerTokenStored;
         }
         return
@@ -88,7 +83,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
                     .sub(lastUpdateTime)
                     .mul(rewardRate)
                     .mul(1e18)
-                    .div(totalStaked())
+                    .div(totalStaked)
             );
     }
 
@@ -103,11 +98,10 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     }
 
     /// @notice Stake specified amount
-    /// @dev visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
-        _totalStaked = _totalStaked.add(amount);
-        _stakedBalances[msg.sender] = _stakedBalances[msg.sender].add(amount);
+        totalStaked = totalStaked.add(amount);
+        stakedBalances[msg.sender] = stakedBalances[msg.sender].add(amount);
         dracula.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
@@ -125,8 +119,8 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
             dracula.burn(amount_burn);
         }
 
-        _totalStaked = _totalStaked.sub(amount);
-        _stakedBalances[msg.sender] = _stakedBalances[msg.sender].sub(amount);
+        totalStaked = totalStaked.sub(amount);
+        stakedBalances[msg.sender] = stakedBalances[msg.sender].sub(amount);
         dracula.safeTransfer(msg.sender, amount_send);
         emit Withdrawn(msg.sender, amount_send);
     }
