@@ -21,7 +21,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     DraculaToken public dracula;
     IERC20 public rewardToken;
-    uint256 public duration;
+    uint256 public rewardsDuration;
 
     uint256 public periodFinish;
     uint256 public rewardRate;
@@ -51,16 +51,16 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     constructor(
         address _rewardToken,
         DraculaToken _draculaToken,
-        uint256 _duration,
+        uint256 _rewardsDuration,
         address _rewardDistributor) public
     IRewardDistributor(_rewardDistributor)
     {
         rewardToken = IERC20(_rewardToken);
         dracula = _draculaToken;
-        duration = _duration;
+        rewardsDuration = _rewardsDuration;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account) external view returns (uint256) {
         return stakedBalances[account];
     }
 
@@ -87,11 +87,15 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
             );
     }
 
+    function rewardForDuration() external view returns (uint256) {
+        return rewardRate.mul(rewardsDuration);
+    }
+
     /// @notice Calculate the earned rewards for an account
     /// @return amount earned by specified account
     function earned(address account) public view returns (uint256) {
         return
-            balanceOf(account)
+            stakedBalances[account]
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
                 .div(1e18)
                 .add(rewards[account]);
@@ -127,7 +131,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     /// @notice Withdraw everything and collect rewards
     function unstake() external {
-        withdraw(balanceOf(msg.sender));
+        withdraw(stakedBalances[msg.sender]);
         getReward();
     }
 
@@ -145,7 +149,6 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     function notifyRewardAmount(uint256 reward)
         external
         override
-        nonReentrant
         onlyRewardDistributor
         updateReward(address(0))
     {
@@ -153,14 +156,14 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         require(reward < uint(-1) / 1e18, "the notified reward cannot invoke multiplication overflow");
 
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(duration);
+            rewardRate = reward.div(rewardsDuration);
         } else {
             uint256 remaining = periodFinish.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = reward.add(leftover).div(duration);
+            rewardRate = reward.add(leftover).div(rewardsDuration);
         }
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(duration);
+        periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
     }
 }
