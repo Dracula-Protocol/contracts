@@ -162,6 +162,10 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
             uint256 leftover = remaining.mul(rewardRate);
             rewardRate = reward.add(leftover).div(rewardsDuration);
         }
+
+        uint256 balance = rewardToken.balanceOf(address(this));
+        require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
+
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
