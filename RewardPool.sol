@@ -12,7 +12,7 @@ import "./IRewardDistributor.sol";
 import "./DraculaToken.sol";
 
 /// @title A reward pool that does not mint
-/// @dev The rewards should be first transferred to this pool, then get "notified" by calling `notifyRewardAmount`.
+/// @dev The rewards are transferred to the pool by calling `notifyRewardAmount`.
 ///      Only the reward distributor can notify.
 contract RewardPool is IRewardDistributor, ReentrancyGuard {
     using SafeMath for uint256;
@@ -145,7 +145,8 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         }
     }
 
-    /// @dev Should be called by external mechanism when reward funds are sent to this contract
+    /// @notice Transfers reward amount to pool and updates reward rate
+    /// @dev Should be called by external mechanism
     function notifyRewardAmount(uint256 reward)
         external
         override
@@ -154,6 +155,8 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     {
         // overflow fix according to https://sips.synthetix.io/sips/sip-77
         require(reward < uint(-1) / 1e18, "the notified reward cannot invoke multiplication overflow");
+
+        rewardToken.safeTransferFrom(msg.sender, address(this), reward);
 
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(rewardsDuration);
