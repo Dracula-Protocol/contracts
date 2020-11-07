@@ -137,7 +137,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     /// @notice Claims reward for the sender account
     function getReward() public nonReentrant updateReward(msg.sender) {
-        uint256 reward = earned(msg.sender);
+        uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
             rewardToken.safeTransfer(msg.sender, reward);
@@ -163,6 +163,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
             rewardRate = reward.add(leftover).div(rewardsDuration);
         }
 
+        // Ensure the provided reward amount is not more than the balance in the contract
         uint256 balance = rewardToken.balanceOf(address(this));
         require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
 
