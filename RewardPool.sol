@@ -12,7 +12,7 @@ import "./IRewardDistributor.sol";
 import "./DraculaToken.sol";
 
 /// @title A reward pool that does not mint
-/// @dev The rewards should be first transferred to this pool, then get "notified" by calling `notifyRewardAmount`.
+/// @dev The rewards are transferred to the pool by calling `notifyRewardAmount`.
 ///      Only the reward distributor can notify.
 contract RewardPool is IRewardDistributor, ReentrancyGuard {
     using SafeMath for uint256;
@@ -21,7 +21,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     DraculaToken public dracula;
     IERC20 public rewardToken;
-    uint256 public duration;
+    uint256 public rewardsDuration;
 
     uint256 public periodFinish;
     uint256 public rewardRate;
@@ -51,16 +51,16 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
     constructor(
         address _rewardToken,
         DraculaToken _draculaToken,
-        uint256 _duration,
+        uint256 _rewardsDuration,
         address _rewardDistributor) public
     IRewardDistributor(_rewardDistributor)
     {
         rewardToken = IERC20(_rewardToken);
         dracula = _draculaToken;
-        duration = _duration;
+        rewardsDuration = _rewardsDuration;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account) external view returns (uint256) {
         return stakedBalances[account];
     }
 
@@ -87,11 +87,15 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
             );
     }
 
+    function rewardForDuration() external view returns (uint256) {
+        return rewardRate.mul(rewardsDuration);
+    }
+
     /// @notice Calculate the earned rewards for an account
     /// @return amount earned by specified account
     function earned(address account) public view returns (uint256) {
         return
-            balanceOf(account)
+            stakedBalances[account]
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
                 .div(1e18)
                 .add(rewards[account]);
@@ -106,9 +110,25 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         emit Staked(msg.sender, amount);
     }
 
+    /// @notice Withdraw specified amount and collect rewards
+    function unstake(uint256 amount) external {
+        withdraw(amount);
+        getReward();
+    }
+
+    /// @notice Claims reward for the sender account
+    function getReward() public nonReentrant updateReward(msg.sender) {
+        uint256 reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rewardToken.safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
     /// @notice Withdraw specified amount
     /// @dev A configurable percentage is burnt on withdrawal
-    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function withdraw(uint256 amount) internal nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         uint256 amount_send = amount;
 
@@ -125,42 +145,33 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         emit Withdrawn(msg.sender, amount_send);
     }
 
-    /// @notice Withdraw everything and collect rewards
-    function unstake() external {
-        withdraw(balanceOf(msg.sender));
-        getReward();
-    }
-
-    /// @notice Claims reward for the sender account
-    function getReward() public nonReentrant updateReward(msg.sender) {
-        uint256 reward = earned(msg.sender);
-        if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardToken.safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
-        }
-    }
-
-    /// @dev Should be called by external mechanism when reward funds are sent to this contract
+    /// @notice Transfers reward amount to pool and updates reward rate
+    /// @dev Should be called by external mechanism
     function notifyRewardAmount(uint256 reward)
         external
         override
-        nonReentrant
         onlyRewardDistributor
         updateReward(address(0))
     {
         // overflow fix according to https://sips.synthetix.io/sips/sip-77
         require(reward < uint(-1) / 1e18, "the notified reward cannot invoke multiplication overflow");
 
+        rewardToken.safeTransferFrom(msg.sender, address(this), reward);
+
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(duration);
+            rewardRate = reward.div(rewardsDuration);
         } else {
             uint256 remaining = periodFinish.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = reward.add(leftover).div(duration);
+            rewardRate = reward.add(leftover).div(rewardsDuration);
         }
+
+        // Ensure the provided reward amount is not more than the balance in the contract
+        uint256 balance = rewardToken.balanceOf(address(this));
+        require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
+
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(duration);
+        periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
     }
 }
