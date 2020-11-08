@@ -128,7 +128,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     /// @notice Withdraw specified amount
     /// @dev A configurable percentage is burnt on withdrawal
-    function withdraw(uint256 amount) internal updateReward(msg.sender) {
+    function withdraw(uint256 amount) internal nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         uint256 amount_send = amount;
 
