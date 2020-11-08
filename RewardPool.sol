@@ -110,9 +110,25 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         emit Staked(msg.sender, amount);
     }
 
+    /// @notice Withdraw specified amount and collect rewards
+    function unstake(uint256 amount) external {
+        withdraw(amount);
+        getReward();
+    }
+
+    /// @notice Claims reward for the sender account
+    function getReward() public nonReentrant updateReward(msg.sender) {
+        uint256 reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rewardToken.safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
     /// @notice Withdraw specified amount
     /// @dev A configurable percentage is burnt on withdrawal
-    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function withdraw(uint256 amount) internal updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         uint256 amount_send = amount;
 
@@ -127,22 +143,6 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
         stakedBalances[msg.sender] = stakedBalances[msg.sender].sub(amount);
         dracula.safeTransfer(msg.sender, amount_send);
         emit Withdrawn(msg.sender, amount_send);
-    }
-
-    /// @notice Withdraw everything and collect rewards
-    function unstake() external {
-        withdraw(stakedBalances[msg.sender]);
-        getReward();
-    }
-
-    /// @notice Claims reward for the sender account
-    function getReward() public nonReentrant updateReward(msg.sender) {
-        uint256 reward = rewards[msg.sender];
-        if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardToken.safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
-        }
     }
 
     /// @notice Transfers reward amount to pool and updates reward rate
