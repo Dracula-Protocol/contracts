@@ -25,7 +25,7 @@ contract DraculaHoard is ERC20("DraculaHoard", "BLOOD"), Ownable {
     /// @notice Return staked amount + rewards
     function balance(address account) public view returns (uint256) {
         uint256 totalShares = totalSupply();
-        return balanceOf(account).mul(dracula.balanceOf(address(this))).div(totalShares);
+        return (totalShares > 0) ? balanceOf(account).mul(dracula.balanceOf(address(this))).div(totalShares) : 0;
     }
 
     function stake(uint256 _amount) external {
