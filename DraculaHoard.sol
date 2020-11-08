@@ -13,8 +13,8 @@ contract DraculaHoard is ERC20("DraculaHoard", "BLOOD"), Ownable {
     IERC20 public dracula;
     uint256 public burnRate = 1;
 
-    constructor(IERC20 _dracula) public {
-        dracula = _dracula;
+    constructor(IERC20 _draculaToken) public {
+        dracula = _draculaToken;
     }
 
     function setBurnRate(uint256 _burnRate) external onlyOwner {

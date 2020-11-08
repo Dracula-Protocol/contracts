@@ -11,7 +11,7 @@ abstract contract IRewardDistributor is Ownable {
         rewardDistributor = _rewardDistributor;
     }
 
-    function notifyRewardAmount(uint256 reward) external virtual;
+    function fundPool(uint256 reward) external virtual;
 
     modifier onlyRewardDistributor() {
         require(_msgSender() == rewardDistributor, "Caller is not reward distributor");

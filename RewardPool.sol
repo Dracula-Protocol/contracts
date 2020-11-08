@@ -12,7 +12,7 @@ import "./IRewardDistributor.sol";
 import "./DraculaToken.sol";
 
 /// @title A reward pool that does not mint
-/// @dev The rewards are transferred to the pool by calling `notifyRewardAmount`.
+/// @dev The rewards are transferred to the pool by calling `fundPool`.
 ///      Only the reward distributor can notify.
 contract RewardPool is IRewardDistributor, ReentrancyGuard {
     using SafeMath for uint256;
@@ -50,13 +50,13 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     constructor(
         address _rewardToken,
-        DraculaToken _draculaToken,
+        DraculaToken _dracula,
         uint256 _rewardsDuration,
         address _rewardDistributor) public
     IRewardDistributor(_rewardDistributor)
     {
         rewardToken = IERC20(_rewardToken);
-        dracula = _draculaToken;
+        dracula = _dracula;
         rewardsDuration = _rewardsDuration;
     }
 
@@ -147,7 +147,7 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
 
     /// @notice Transfers reward amount to pool and updates reward rate
     /// @dev Should be called by external mechanism
-    function notifyRewardAmount(uint256 reward)
+    function fundPool(uint256 reward)
         external
         override
         onlyRewardDistributor
@@ -165,10 +165,6 @@ contract RewardPool is IRewardDistributor, ReentrancyGuard {
             uint256 leftover = remaining.mul(rewardRate);
             rewardRate = reward.add(leftover).div(rewardsDuration);
         }
-
-        // Ensure the provided reward amount is not more than the balance in the contract
-        uint256 balance = rewardToken.balanceOf(address(this));
-        require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
 
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(rewardsDuration);
