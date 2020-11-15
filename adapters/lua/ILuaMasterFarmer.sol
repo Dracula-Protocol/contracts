@@ -12,4 +12,5 @@ interface ILuaMasterFarmer{
     function withdraw(uint256 _pid, uint256 _amount) external;
     function claimReward(uint256 _pid) external;
     function emergencyWithdraw(uint256 _pid) external;
+    function pendingReward(uint256 _pid, address _user) external view returns (uint256);
 }

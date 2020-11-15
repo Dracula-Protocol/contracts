@@ -15,15 +15,13 @@ contract SushiAdapter is IVampireAdapter {
     using SafeMath for uint256;
     IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IMasterChef constant sushiMasterChef = IMasterChef(0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd);
+    address constant MASTER_VAMPIRE = 0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099;
     IERC20 constant sushi = IERC20(0x6B3595068778DD592e39A122f4f5a5cF09C90fE2);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IUniswapV2Pair constant sushiWethPair = IUniswapV2Pair(0x795065dCc9f64b5614C407a6EFDC400DA6221FB0);
     uint256 constant BLOCKS_PER_YEAR = 2336000;
     // token 0 - sushi
     // token 1 - weth
-
-    constructor() public {
-    }
 
     // Victim info
     function rewardToken() external view override returns (IERC20) {
@@ -37,7 +35,7 @@ contract SushiAdapter is IVampireAdapter {
     function sellableRewardAmount() external view override returns (uint256) {
         return uint256(-1);
     }
-    
+
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
         require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
@@ -47,7 +45,7 @@ contract SushiAdapter is IVampireAdapter {
         sushiWethPair.swap(uint(0), amountOutput, to, new bytes(0));
         return amountOutput;
     }
-    
+
     // Pool info
     function lockableToken(uint256 poolId) external view override returns (IERC20) {
         (IERC20 lpToken,,,) = sushiMasterChef.poolInfo(poolId);
@@ -58,7 +56,11 @@ contract SushiAdapter is IVampireAdapter {
         (uint256 amount,) = sushiMasterChef.userInfo(poolId, user);
         return amount;
     }
-    
+
+    function pendingReward(uint256 poolId) external view override returns (uint256) {
+        return sushiMasterChef.pendingSushi(poolId, MASTER_VAMPIRE);
+    }
+
     // Pool actions, requires impersonation via delegatecall
     function deposit(address _adapter, uint256 poolId, uint256 amount) external override {
         IVampireAdapter adapter = IVampireAdapter(_adapter);
@@ -67,13 +69,13 @@ contract SushiAdapter is IVampireAdapter {
     }
 
     function withdraw(address, uint256 poolId, uint256 amount) external override {
-        sushiMasterChef.withdraw( poolId, amount);
+        sushiMasterChef.withdraw(poolId, amount);
     }
 
     function claimReward(address, uint256 poolId) external override {
-        sushiMasterChef.deposit( poolId, 0);
+        sushiMasterChef.deposit(poolId, 0);
     }
-    
+
     function emergencyWithdraw(address, uint256 poolId) external override {
         sushiMasterChef.emergencyWithdraw(poolId);
     }
@@ -106,7 +108,7 @@ contract SushiAdapter is IVampireAdapter {
         }
 
         require(
-            IUniswapV2Factory(lpToken.factory()).getPair(token1, address(weth)) != address(0), 
+            IUniswapV2Factory(lpToken.factory()).getPair(token1, address(weth)) != address(0),
             "Neither token0-weth nor token1-weth pair exists");
         (uint256 wethReserve, uint256 token1ToWethReserve) = UniswapV2Library.getReserves(lpToken.factory(), address(weth), token1);
         uint256 tmp = amount.mul(token1Reserve).mul(wethReserve).mul(2);
@@ -115,13 +117,13 @@ contract SushiAdapter is IVampireAdapter {
 
     function lockedValue(address user, uint256 poolId) external override view returns (uint256) {
         SushiAdapter adapter = SushiAdapter(this);
-        return adapter.lpTokenValue(adapter.lockedAmount(user, poolId),IUniswapV2Pair(address(adapter.lockableToken(poolId))));     
-    }    
+        return adapter.lpTokenValue(adapter.lockedAmount(user, poolId),IUniswapV2Pair(address(adapter.lockableToken(poolId))));
+    }
 
     function totalLockedValue(uint256 poolId) external override view returns (uint256) {
         SushiAdapter adapter = SushiAdapter(this);
         IUniswapV2Pair lockedToken = IUniswapV2Pair(address(adapter.lockableToken(poolId))) ;
-        return adapter.lpTokenValue(lockedToken.balanceOf(adapter.poolAddress(poolId)), lockedToken);     
+        return adapter.lpTokenValue(lockedToken.balanceOf(adapter.poolAddress(poolId)), lockedToken);
     }
 
     function normalizedAPY(uint256 poolId) external override view returns (uint256) {

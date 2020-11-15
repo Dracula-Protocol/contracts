@@ -13,6 +13,7 @@ import "./IUniswapPool.sol";
 contract UniswapAdapter is IVampireAdapter {
     IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     IUniswapPool[] pools;
+    address constant MASTER_VAMPIRE = 0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099;
     IERC20 constant uni = IERC20(0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IUniswapV2Pair constant uniWethPair = IUniswapV2Pair(0xd3d2E2692501A5c9Ca623199D38826e513033a17);
@@ -38,7 +39,7 @@ contract UniswapAdapter is IVampireAdapter {
     function sellableRewardAmount() external view override returns (uint256) {
         return uint256(-1);
     }
-    
+
     // Victim actions, requires impersonation via delegatecall
     function sellRewardForWeth(address, uint256 rewardAmount, address to) external override returns(uint256) {
         require(drainController.priceIsUnderRejectionTreshold(), "Possible price manipulation, drain rejected");
@@ -48,7 +49,7 @@ contract UniswapAdapter is IVampireAdapter {
         uniWethPair.swap(uint(0), amountOutput, to, new bytes(0));
         return amountOutput;
     }
-    
+
     // Pool info
     function lockableToken(uint256 poolId) external view override returns (IERC20) {
         return pools[poolId].stakingToken();
@@ -57,7 +58,11 @@ contract UniswapAdapter is IVampireAdapter {
     function lockedAmount(address user, uint256 poolId) external view override returns (uint256) {
         return pools[poolId].balanceOf(user);
     }
-    
+
+    function pendingReward(uint256 poolId) external view override returns (uint256) {
+        return pools[poolId].earned(MASTER_VAMPIRE);
+    }
+
     // Pool actions, requires impersonation via delegatecall
     function deposit(address _adapter, uint256 poolId, uint256 amount) external override {
         IVampireAdapter adapter = IVampireAdapter(_adapter);
@@ -74,7 +79,7 @@ contract UniswapAdapter is IVampireAdapter {
         IVampireAdapter adapter = IVampireAdapter(_adapter);
         IUniswapPool(adapter.poolAddress(poolId)).getReward();
     }
-    
+
     function emergencyWithdraw(address _adapter, uint256 poolId) external override {
         IVampireAdapter adapter = IVampireAdapter(_adapter);
         IUniswapPool(adapter.poolAddress(poolId)).withdraw(IUniswapPool(adapter.poolAddress(poolId)).balanceOf(address(this)));
@@ -87,13 +92,13 @@ contract UniswapAdapter is IVampireAdapter {
     function rewardToWethPool() external view override returns (address) {
         return address(uniWethPair);
     }
-    
+
     function lockedValue(address, uint256) external override view returns (uint256) {
         require(false, "not implemented");
-    }    
+    }
 
     function totalLockedValue(uint256) external override view returns (uint256) {
-        require(false, "not implemented"); 
+        require(false, "not implemented");
     }
 
     function normalizedAPY(uint256) external override view returns (uint256) {

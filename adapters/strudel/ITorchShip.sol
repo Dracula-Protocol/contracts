@@ -14,4 +14,5 @@ interface ITorchShip{
     function getMultiplier(uint256 _from, uint256 _to) external view returns (uint256);
     function strudelPerBlock() external view returns (uint256);
     function totalAllocPoint() external view returns (uint256);
+    function pendingStrudel(uint256 _pid, address _user) external view returns (uint256);
 }

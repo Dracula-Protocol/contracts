@@ -10,6 +10,7 @@ import "./IMasterChef.sol";
 
 contract SashimiAdapter is IVampireAdapter {
     IDrainController constant DRAIN_CONTROLLER = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
+    address constant MASTER_VAMPIRE = 0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099;
     IMasterChef constant SASHIMI_MASTERCHEF = IMasterChef(0x1DaeD74ed1dD7C9Dabbe51361ac90A69d851234D);
     IUniswapV2Router02 constant router = IUniswapV2Router02(0xe4FE6a45f354E845F954CdDeE6084603CEDB9410);
     IERC20 constant SASHIMI = IERC20(0xC28E27870558cF22ADD83540d2126da2e4b464c2);
@@ -49,6 +50,10 @@ contract SashimiAdapter is IVampireAdapter {
     function lockedAmount(address user, uint256 poolId) external view override returns (uint256) {
         (uint256 amount,) = SASHIMI_MASTERCHEF.userInfo(poolId, user);
         return amount;
+    }
+
+    function pendingReward(uint256 poolId) external view override returns (uint256) {
+        return SASHIMI_MASTERCHEF.pendingSashimi(poolId, MASTER_VAMPIRE);
     }
 
     // Pool actions, requires impersonation via delegatecall

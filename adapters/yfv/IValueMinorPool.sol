@@ -11,4 +11,5 @@ interface IValueMinorPool{
     function deposit(uint256 _pid, uint256 _amount, address) external;
     function withdraw(uint256 _pid, uint256 _amount) external;
     function emergencyWithdraw(uint256 _pid) external;
+    function pendingValue(uint256 _pid, address _user) external view returns (uint256);
 }

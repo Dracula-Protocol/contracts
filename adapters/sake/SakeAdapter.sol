@@ -11,6 +11,7 @@ import "./ISakeMaster.sol";
 
 contract SakeAdapter is IVampireAdapter {
     IDrainController constant DRAIN_CONTROLLER = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
+    address constant MASTER_VAMPIRE = 0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099;
     ISakeMaster constant SAKE_MASTER = ISakeMaster(0x0EC1f1573f3a2dB0Ad396c843E6a079e2a53e557);
     IERC20 constant SAKE = IERC20(0x066798d9ef0833ccc719076Dab77199eCbd178b0);
     IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
@@ -50,6 +51,10 @@ contract SakeAdapter is IVampireAdapter {
     function lockedAmount(address user, uint256 poolId) external view override returns (uint256) {
         (uint256 amount,) = SAKE_MASTER.userInfo(poolId, user);
         return amount;
+    }
+
+    function pendingReward(uint256 poolId) external view override returns (uint256) {
+        return SAKE_MASTER.pendingSake(poolId, MASTER_VAMPIRE);
     }
 
     // Pool actions, requires impersonation via delegatecall
