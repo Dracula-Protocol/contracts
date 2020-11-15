@@ -11,35 +11,56 @@ interface IMasterVampire {
     function updateDevAddress(address _devAddress) external;
 }
 
+/**
+* @title Receives rewards from MasterVampire and redistributes to a developer fund and a DRC reward pool.
+*/
 contract DevDistributor is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for DraculaToken;
-    DraculaToken public dracula;
 
+    DraculaToken public dracula;
     IMasterVampire constant MASTER_VAMPIRE = IMasterVampire(0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099);
 
-    uint256 public rewardShare;
+    uint256 public rewardPoolShare;
     address public rewardPool;
     address public devAddress;
 
-    constructor(DraculaToken _draculaToken, address _rewardPool) public {
-        dracula = _draculaToken;
-        rewardShare = 500;
-        rewardPool = _rewardPool;
+    /**
+    * @notice Construct the contract
+    * @param draculaToken_ instance of the Draculatoken
+    * @param rewardPool_ address of the reward pool
+    */
+    constructor(DraculaToken draculaToken_, address rewardPool_) public {
+        dracula = draculaToken_;
+        rewardPoolShare = 500;
+        rewardPool = rewardPool_;
         devAddress = 0xa896e4bd97a733F049b23d2AcEB091BcE01f298d;
     }
 
+    /**
+    * @notice Distributes DRC from the contracts balance
+    */
     function distribute() external {
         uint256 devDrcBalance = dracula.balanceOf(address(this));
-        dracula.transfer(rewardPool, devDrcBalance.mul(rewardShare).div(1000));
-        dracula.transfer(devAddress, devDrcBalance.mul(uint256(1000).sub(rewardShare)).div(1000));
+        uint256 rewardPoolAmt = devDrcBalance.mul(rewardPoolShare).div(1000);
+        uint256 devAmt = devDrcBalance.sub(rewardPoolAmt);
+        dracula.safeTransfer(rewardPool, rewardPoolAmt);
+        dracula.safeTransfer(devAddress, devAmt);
     }
 
-    function changeDev(address dev) external onlyOwner {
-        MASTER_VAMPIRE.updateDevAddress(dev);
+    /**
+    * @notice Changes the address where dev funds are distributed to
+    * @param dev the new address
+    */
+    function changeDevAddress(address dev) external onlyOwner {
+        devAddress = dev;
     }
 
-    function changeReward(uint256 _rewardShare) external onlyOwner {
-        rewardShare = _rewardShare;
+    /**
+    * @notice Changes the reward percentage distributed to reward pool
+    * @param rewardPoolShare_ percentage using decimal base of 1000 ie: 10% = 100
+    */
+    function changeReward(uint256 rewardPoolShare_) external onlyOwner {
+        rewardPoolShare = rewardPoolShare_;
     }
 }
