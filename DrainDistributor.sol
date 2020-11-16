@@ -6,10 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-interface IMasterVampire {
-    function updateDrainAddress(address _drainAddress) external;
-}
-
 interface ILpController {
     function addLiquidity(uint256 amount) external;
 }
@@ -24,7 +20,6 @@ interface IRewardPool {
 contract DrainDistributor is Ownable {
     using SafeMath for uint256;
     IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    IMasterVampire constant MASTER_VAMPIRE = IMasterVampire(0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099);
 
     uint256 public rewardPoolShare;
     address public rewardPool;
@@ -48,7 +43,9 @@ contract DrainDistributor is Ownable {
         uint256 drainWethBalance = WETH.balanceOf(address(this));
         uint256 rewardPoolAmt = drainWethBalance.mul(rewardPoolShare).div(1000);
         uint256 lpAmt = drainWethBalance.sub(rewardPoolAmt);
+        WETH.approve(rewardPool, rewardPoolAmt);
         IRewardPool(rewardPool).fundPool(rewardPoolAmt);
+        WETH.approve(lpController, lpAmt);
         ILpController(lpController).addLiquidity(lpAmt);
     }
 

@@ -36,7 +36,6 @@ contract LiquidityController {
     */
     function addLiquidity(uint256 amount) external {
         WETH.safeTransferFrom(msg.sender, address(this), amount);
-        // Use half the WETH to buy DRC
         uint256 halfWethBalance = WETH.balanceOf(address(this)).div(2);
         WETH.safeTransfer(address(DRC_WETH_PAIR), halfWethBalance);
         (uint draculaReserve, uint wethReserve,) = DRC_WETH_PAIR.getReserves();
