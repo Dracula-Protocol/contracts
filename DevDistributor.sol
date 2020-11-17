@@ -23,7 +23,7 @@ contract DevDistributor is Ownable {
 
     uint256 public rewardPoolShare;
     address public rewardPool;
-    address public devAddress;
+    address public devFundAddress;
 
     /**
     * @notice Construct the contract
@@ -34,7 +34,7 @@ contract DevDistributor is Ownable {
         dracula = draculaToken_;
         rewardPoolShare = 500;
         rewardPool = rewardPool_;
-        devAddress = 0xa896e4bd97a733F049b23d2AcEB091BcE01f298d;
+        devFundAddress = 0xa896e4bd97a733F049b23d2AcEB091BcE01f298d;
     }
 
     /**
@@ -45,15 +45,23 @@ contract DevDistributor is Ownable {
         uint256 rewardPoolAmt = devDrcBalance.mul(rewardPoolShare).div(1000);
         uint256 devAmt = devDrcBalance.sub(rewardPoolAmt);
         dracula.safeTransfer(rewardPool, rewardPoolAmt);
-        dracula.safeTransfer(devAddress, devAmt);
+        dracula.safeTransfer(devFundAddress, devAmt);
+    }
+
+    /**
+    * @notice Changes the dev associated with MasterVampire
+    * @param dev the new address
+    */
+    function changeDev(address dev) external onlyOwner {
+        MASTER_VAMPIRE.updateDevAddress(dev);
     }
 
     /**
     * @notice Changes the address where dev funds are distributed to
     * @param dev the new address
     */
-    function changeDevAddress(address dev) external onlyOwner {
-        devAddress = dev;
+    function changeDevFundAddress(address dev) external onlyOwner {
+        devFundAddress = dev;
     }
 
     /**
