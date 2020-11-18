@@ -31,7 +31,7 @@ contract DrainDistributor is Ownable {
     * @param lpController_ address of the LP controller
     */
     constructor(address rewardPool_, address lpController_) public {
-        rewardPoolShare = 150;
+        rewardPoolShare = 100;
         rewardPool = rewardPool_;
         lpController = lpController_;
     }
@@ -53,7 +53,7 @@ contract DrainDistributor is Ownable {
     * @notice Changes the reward percentage distributed to reward pool
     * @param rewardPoolShare_ percentage using decimal base of 1000 ie: 10% = 100
     */
-    function changeReward(uint256 rewardPoolShare_) external onlyOwner {
+    function changeRewardShare(uint256 rewardPoolShare_) external onlyOwner {
         rewardPoolShare = rewardPoolShare_;
     }
 

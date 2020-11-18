@@ -68,7 +68,7 @@ contract DevDistributor is Ownable {
     * @notice Changes the reward percentage distributed to reward pool
     * @param rewardPoolShare_ percentage using decimal base of 1000 ie: 10% = 100
     */
-    function changeReward(uint256 rewardPoolShare_) external onlyOwner {
+    function changeRewardShare(uint256 rewardPoolShare_) external onlyOwner {
         rewardPoolShare = rewardPoolShare_;
     }
 }
