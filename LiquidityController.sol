@@ -21,7 +21,7 @@ contract LiquidityController {
     IERC20 constant WETH = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IUniswapV2Pair constant DRC_WETH_PAIR = IUniswapV2Pair(0x276E62C70e0B540262491199Bc1206087f523AF6);
     IUniswapV2Router02 constant UNI_ROUTER = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    address constant DEAD = 0x000000000000000000000000000000000000D4AD;
+    address constant DEAD = 0x000000000000000000000000000000000000DEAD;
 
     /// @notice Construct and approve spending for LP assets
     constructor() public {

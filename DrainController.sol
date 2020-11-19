@@ -72,4 +72,3 @@ contract DrainController is Ownable
         drainRejectionTreshold = _drainRejectionTreshold;
     }
 }
-
