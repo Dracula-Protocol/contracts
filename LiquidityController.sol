@@ -38,8 +38,8 @@ contract LiquidityController {
         WETH.safeTransferFrom(msg.sender, address(this), amount);
         uint256 halfWethBalance = WETH.balanceOf(address(this)).div(2);
         WETH.safeTransfer(address(DRC_WETH_PAIR), halfWethBalance);
-        (uint draculaReserve, uint wethReserve,) = DRC_WETH_PAIR.getReserves();
-        uint256 amountOutput = UniswapV2Library.getAmountOut(halfWethBalance, wethReserve, draculaReserve);
+        (uint drcReserve, uint wethReserve,) = DRC_WETH_PAIR.getReserves();
+        uint256 amountOutput = UniswapV2Library.getAmountOut(halfWethBalance, wethReserve, drcReserve);
         DRC_WETH_PAIR.swap(amountOutput, uint256(0), address(this), new bytes(0));
 
         UNI_ROUTER.addLiquidity(address(DRACULA),
