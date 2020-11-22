@@ -24,8 +24,7 @@ library UQ112x112 {
     }
 }
 
-contract DrainController is Ownable
-{
+contract DrainController is Ownable {
     using SafeMath for uint256;
     using UQ112x112 for uint224;
 
@@ -35,7 +34,7 @@ contract DrainController is Ownable
 
     uint lastCumulativePriceTimestamp;
     uint lastCumulativePrice;
-    
+
     uint224 public price;
     uint256 public drainRejectionTreshold;
 

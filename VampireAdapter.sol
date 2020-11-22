@@ -57,17 +57,17 @@ library VampireAdapter {
         (bool success,) = address(victim).delegatecall(abi.encodeWithSignature("withdraw(address,uint256,uint256)", address(victim), poolId, amount));
         require(success, "withdraw(uint256 poolId, uint256 amount) delegatecall failed.");
     }
-    
+
     function claimReward(Victim victim, uint256 poolId) external {
         (bool success,) = address(victim).delegatecall(abi.encodeWithSignature("claimReward(address,uint256)", address(victim), poolId));
         require(success, "claimReward(uint256 poolId) delegatecall failed.");
     }
-    
+
     function emergencyWithdraw(Victim victim, uint256 poolId) external {
         (bool success,) = address(victim).delegatecall(abi.encodeWithSignature("emergencyWithdraw(address,uint256)", address(victim), poolId));
         require(success, "emergencyWithdraw(uint256 poolId) delegatecall failed.");
     }
-    
+
     // Service methods
     function poolAddress(Victim victim, uint256 poolId) external view returns (address) {
         (bool success, bytes memory result) = address(victim).staticcall(abi.encodeWithSignature("poolAddress(uint256)", poolId));

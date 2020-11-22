@@ -211,7 +211,7 @@ contract MasterVampire is Ownable, Timelock {
         user.rewardDebt = user.amount.mul(pool.accDrcPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
-    
+
     function withdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -258,7 +258,7 @@ contract MasterVampire is Ownable, Timelock {
             dracula.transfer(_to, _amount);
         }
     }
-    
+
     function drain(uint256 _pid) public {
         require(_pid != 0, "Can't drain from myself");
         PoolInfo storage pool = poolInfo[_pid];
