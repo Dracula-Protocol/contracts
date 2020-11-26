@@ -11,4 +11,5 @@ interface ISakeMaster{
     function deposit(uint256 _pid, uint256 _amount) external;
     function withdraw(uint256 _pid, uint256 _amount) external;
     function emergencyWithdraw(uint256 _pid) external;
+    function pendingSake(uint256 _pid, address _user) external view returns (uint256);
 }

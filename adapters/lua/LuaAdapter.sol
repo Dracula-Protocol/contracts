@@ -14,11 +14,10 @@ import "./ILuaMasterFarmer.sol";
 contract LuaAdapter is IVampireAdapter {
     IDrainController constant drainController = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
     ILuaMasterFarmer constant luaMasterFarmer = ILuaMasterFarmer(0xb67D7a6644d9E191Cac4DA2B88D6817351C7fF62);
+    address constant MASTER_VAMPIRE = 0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099;
     IUniswapV2Router02 constant router = IUniswapV2Router02(0x1d5C6F1607A171Ad52EFB270121331b3039dD83e);
     IERC20 constant lua = IERC20(0xB1f66997A5760428D3a87D68b90BfE0aE64121cC);
     IERC20 constant weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-
-    constructor() public {}
 
     // Victim info
     function rewardToken() external override view returns (IERC20) {
@@ -45,7 +44,7 @@ contract LuaAdapter is IVampireAdapter {
         path[1] = address(weth);
         uint[] memory amounts = router.getAmountsOut(rewardAmount, path);
         lua.approve(address(router), uint256(-1));
-        amounts = router.swapExactTokensForTokens(rewardAmount, amounts[amounts.length - 1], path, to, block.timestamp );
+        amounts = router.swapExactTokensForTokens(rewardAmount, amounts[amounts.length - 1], path, to, block.timestamp);
         return amounts[amounts.length - 1];
     }
 
@@ -68,6 +67,10 @@ contract LuaAdapter is IVampireAdapter {
     {
         (uint256 amount, , ) = luaMasterFarmer.userInfo(poolId, user);
         return amount;
+    }
+
+    function pendingReward(uint256 poolId) external view override returns (uint256) {
+        return luaMasterFarmer.pendingReward(poolId, MASTER_VAMPIRE);
     }
 
     // Pool actions, requires impersonation via delegatecall
@@ -111,7 +114,7 @@ contract LuaAdapter is IVampireAdapter {
     }
 
     function totalLockedValue(uint256) external override view returns (uint256) {
-        require(false, "not implemented"); 
+        require(false, "not implemented");
     }
 
     function normalizedAPY(uint256) external override view returns (uint256) {

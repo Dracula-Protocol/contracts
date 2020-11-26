@@ -14,4 +14,5 @@ interface IMasterChef{
     function getMultiplier(uint256 _from, uint256 _to) external view returns (uint256);
     function sushiPerBlock() external view returns (uint256);
     function totalAllocPoint() external view returns (uint256);
+    function pendingSushi(uint256 _pid, address _user) external view returns (uint256);
 }

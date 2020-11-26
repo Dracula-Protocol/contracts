@@ -47,6 +47,13 @@ library VampireAdapter {
         return abi.decode(result, (uint256));
     }
 
+    function pendingReward(Victim victim, uint256 poolId) external view returns (uint256) {
+        // note the impersonation
+        (bool success, bytes memory result) = address(victim).staticcall(abi.encodeWithSignature("pendingReward(uint256)", poolId));
+        require(success, "pendingReward(uint256 poolId) staticcall failed.");
+        return abi.decode(result, (uint256));
+    }
+
     // Pool actions
     function deposit(Victim victim, uint256 poolId, uint256 amount) external {
         (bool success,) = address(victim).delegatecall(abi.encodeWithSignature("deposit(address,uint256,uint256)", address(victim), poolId, amount));

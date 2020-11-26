@@ -11,6 +11,7 @@ import "./IMasterChef.sol";
 
 contract XSPAdapter is IVampireAdapter {
     IDrainController constant DRAIN_CONTROLLER = IDrainController(0x2e813f2e524dB699d279E631B0F2117856eb902C);
+    address constant MASTER_VAMPIRE = 0xD12d68Fd52b54908547ebC2Cd77Ec6EbbEfd3099;
     IMasterChef constant XSP_MASTERCHEF = IMasterChef(0xEbF9F6E03a6f5Dba658c3a3c2E14514E27EcC444);
     IERC20 constant XSP = IERC20(0x9b06D48E0529ecF05905fF52DD426ebEc0EA3011);
     IUniswapV2Pair constant XSP_WETH_PAIR = IUniswapV2Pair(0x5fA78fA8F5d6371ceD774e0D306a58fD1b8b03e3);
@@ -49,6 +50,10 @@ contract XSPAdapter is IVampireAdapter {
     function lockedAmount(address user, uint256 poolId) external view override returns (uint256) {
         (uint256 amount,) = XSP_MASTERCHEF.userInfo(poolId, user);
         return amount;
+    }
+
+    function pendingReward(uint256 poolId) external view override returns (uint256) {
+        return XSP_MASTERCHEF.pendingXSP(poolId, MASTER_VAMPIRE);
     }
 
     // Pool actions, requires impersonation via delegatecall
